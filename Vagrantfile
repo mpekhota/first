@@ -55,7 +55,7 @@ Vagrant.configure("2") do |config|
   #
   #   # Customize the amount of memory on the VM:
     vb.memory = "1024"
-	cpus = "4"
+    cpus = "4"
   end
   #
   # View the documentation for the provider you are using for more
@@ -65,25 +65,26 @@ Vagrant.configure("2") do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    yum install -y mc net-tools htop atop
+    yum install -y mc net-tools htop iotop
     echo "127.0.0.1 localhost" > /etc/hosts
-	echo "127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4" >> /etc/hosts
-	echo "::1  localhost localhost.localdomain localhost6 localhost6.localdomain6" >> /etc/hosts
-	echo "192.168.56.10 srv1" >> /etc/hosts
+    echo "127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4" >> /etc/hosts
+    echo "::1  localhost localhost.localdomain localhost6 localhost6.localdomain6" >> /etc/hosts
+    echo "192.168.56.10 srv1" >> /etc/hosts
     echo "192.168.56.11 srv2" >> /etc/hosts
   SHELL
     
   config.vm.define "srv1" do |srv1|
     srv1.vm.hostname = "srv1"
-	srv1.vm.network "private_network", ip: "192.168.56.10"	
-	srv1.vm.provision "shell", inline: <<-SHELL
-	  yum -y install git
-	SHELL
+    srv1.vm.network "private_network", ip: "192.168.56.10"	
+    srv1.vm.provision "shell", inline: <<-SHELL
+    yum -y install git
+      ping -c 10 srv2 >> /home/git/first/check_srv2.txt
+    SHELL
   end
   
   config.vm.define "srv2" do |srv2|
     srv2.vm.hostname = "srv2"
-	srv2.vm.network "private_network", ip: "192.168.56.11"
+    srv2.vm.network "private_network", ip: "192.168.56.11"
   end
   
 end

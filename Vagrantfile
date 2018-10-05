@@ -77,7 +77,7 @@ Vagrant.configure("2") do |config|
     srv1.vm.hostname = "srv1"
     srv1.vm.network "private_network", ip: "192.168.56.10"	
     srv1.vm.provision "shell", inline: <<-SHELL
-    yum -y install git
+      yum -y install git
       ping -c 10 srv2 >> /home/git/first/check_srv2.txt
     SHELL
   end

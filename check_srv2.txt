@@ -1,0 +1,15 @@
+PING srv2 (192.168.56.11) 56(84) bytes of data.
+64 bytes from srv2 (192.168.56.11): icmp_seq=1 ttl=64 time=0.199 ms
+64 bytes from srv2 (192.168.56.11): icmp_seq=2 ttl=64 time=0.674 ms
+64 bytes from srv2 (192.168.56.11): icmp_seq=3 ttl=64 time=0.693 ms
+64 bytes from srv2 (192.168.56.11): icmp_seq=4 ttl=64 time=0.635 ms
+64 bytes from srv2 (192.168.56.11): icmp_seq=5 ttl=64 time=0.620 ms
+64 bytes from srv2 (192.168.56.11): icmp_seq=6 ttl=64 time=0.719 ms
+64 bytes from srv2 (192.168.56.11): icmp_seq=7 ttl=64 time=0.707 ms
+64 bytes from srv2 (192.168.56.11): icmp_seq=8 ttl=64 time=0.683 ms
+64 bytes from srv2 (192.168.56.11): icmp_seq=9 ttl=64 time=0.663 ms
+64 bytes from srv2 (192.168.56.11): icmp_seq=10 ttl=64 time=0.583 ms
+
+--- srv2 ping statistics ---
+10 packets transmitted, 10 received, 0% packet loss, time 9006ms
+rtt min/avg/max/mdev = 0.199/0.617/0.719/0.147 ms

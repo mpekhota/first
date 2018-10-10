@@ -77,10 +77,9 @@ Vagrant.configure("2") do |config|
     echo "192.168.56.11 srv2" >> /etc/hosts
     cp /vagrant/id_rsa /home/vagrant/.ssh/id_rsa
     chmod 655 /home/vagrant/.ssh/id_rsa
-    cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
     echo StrictHostKeyChecking no >> /home/vagrant/.ssh/config
+    cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
     echo PubkeyAuthentication yes >> /etc/ssh/sshd_config
-    #echo StrictHostKeyChecking no >> /etc/ssh/sshd_config
   SHELL
     
   config.vm.define "srv2" do |srv2|

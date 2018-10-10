@@ -15,12 +15,13 @@ Vagrant.configure("2") do |config|
   config.vm.box = "bento/centos-7.5"
   
   # Enable SSH agent forwarding
-  config.ssh.forward_agent = true
+  #config.ssh.private_key_path = "~/.ssh/id_rsa"
+  #config.ssh.forward_agent = true
   
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
+    config.vm.box_check_update = false
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
@@ -68,12 +69,18 @@ Vagrant.configure("2") do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    yum install -y epel-release mc net-tools htop iotop
+    yum install -y mc
     echo "127.0.0.1 localhost" > /etc/hosts
     echo "127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4" >> /etc/hosts
     echo "::1  localhost localhost.localdomain localhost6 localhost6.localdomain6" >> /etc/hosts
     echo "192.168.56.10 srv1" >> /etc/hosts
     echo "192.168.56.11 srv2" >> /etc/hosts
+    cp /vagrant/id_rsa /home/vagrant/.ssh/id_rsa
+    chmod 655 /home/vagrant/.ssh/id_rsa
+    cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
+    echo StrictHostKeyChecking no >> /home/vagrant/.ssh/config
+    echo PubkeyAuthentication yes >> /etc/ssh/sshd_config
+    #echo StrictHostKeyChecking no >> /etc/ssh/sshd_config
   SHELL
     
   config.vm.define "srv2" do |srv2|
@@ -87,7 +94,6 @@ Vagrant.configure("2") do |config|
     srv1.vm.provision "shell", inline: <<-SHELL
       yum -y install git
       cd /home/vagrant/
-      git init
       git clone git://github.com/mpekhota/first
       cd first
       git config --global user.email "m.pekhota@gmail.com"

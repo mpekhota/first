@@ -21,7 +21,7 @@ Vagrant.configure("2") do |config|
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
-    config.vm.box_check_update = false
+  config.vm.box_check_update = false
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
@@ -58,7 +58,7 @@ Vagrant.configure("2") do |config|
     vb.gui = true
   #
   #   # Customize the amount of memory on the VM:
-    vb.memory = "1024"
+    vb.memory = "512"
     cpus = "4"
   end
   #
@@ -68,6 +68,7 @@ Vagrant.configure("2") do |config|
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
+  
   config.vm.provision "shell", inline: <<-SHELL
     yum install -y mc
     echo "127.0.0.1 localhost" > /etc/hosts
@@ -75,6 +76,7 @@ Vagrant.configure("2") do |config|
     echo "::1  localhost localhost.localdomain localhost6 localhost6.localdomain6" >> /etc/hosts
     echo "192.168.56.10 srv1" >> /etc/hosts
     echo "192.168.56.11 srv2" >> /etc/hosts
+    echo "192.168.56.12 srv3" >> /etc/hosts
     cp /vagrant/id_rsa /home/vagrant/.ssh/id_rsa
     chmod 655 /home/vagrant/.ssh/id_rsa
     echo StrictHostKeyChecking no >> /home/vagrant/.ssh/config
@@ -82,24 +84,59 @@ Vagrant.configure("2") do |config|
     echo PubkeyAuthentication yes >> /etc/ssh/sshd_config
   SHELL
     
-  config.vm.define "srv2" do |srv2|
-    srv2.vm.hostname = "srv2"
-    srv2.vm.network "private_network", ip: "192.168.56.11"
-  end
-    
   config.vm.define "srv1" do |srv1|
     srv1.vm.hostname = "srv1"
     srv1.vm.network "private_network", ip: "192.168.56.10"
     srv1.vm.provision "shell", inline: <<-SHELL
-      yum -y install git
-      cd /home/vagrant/
-      git clone git://github.com/mpekhota/first
-      cd first
-      git config --global user.email "m.pekhota@gmail.com"
-      git config --global user.name "Mikhail Pekhota"
-      git checkout task2
-      cat check_srv2.txt
+      yum install -y httpd
+      systemctl enable httpd
+      systemctl start httpd
+      cp /vagrant/mod_jk.so /etc/httpd/modules/
+      touch /etc/httpd/conf.d/workers.properties
+      echo "worker.list=lb" > /etc/httpd/conf.d/workers.properties
+      echo "worker.lb.type=lb" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.lb.balance_workers=srv2, srv3" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.srv2.host=192.168.56.11" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.srv2.port=8009" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.srv2.type=ajp13" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.srv3.host=192.168.56.12" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.srv3.port=8009" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.srv3.type=ajp13" >> /etc/httpd/conf.d/workers.properties
+      echo "LoadModule jk_module modules/mod_jk.so" > /etc/httpd/conf.d/httpd.conf
+      echo "JkWorkersFile conf.d/workers.properties" >> /etc/httpd/conf.d/httpd.conf
+      echo "JkShmFile /tmp/shm" >> /etc/httpd/conf.d/httpd.conf
+      echo "JkLogFile logs/mod_jk.log" >> /etc/httpd/conf.d/httpd.conf
+      echo "JkLogLevel info" >> /etc/httpd/conf.d/httpd.conf
+      echo "JkMount /loadbalancer* lb" >> /etc/httpd/conf.d/httpd.conf
+      systemctl enable httpd
+      systemctl start httpd
     SHELL
   end
-
+  
+  config.vm.define "srv2" do |srv2|
+    srv2.vm.hostname = "srv2"
+    srv2.vm.network "private_network", ip: "192.168.56.11"
+    srv2.vm.network "forwarded_port", guest: 8080, host: 8001
+    srv2.vm.provision "shell", inline: <<-SHELL
+      yum install -y tomcat tomcat-webapps tomcat-admin-webapps
+      sudo mkdir /usr/share/tomcat/webapps/loadbalancer
+      systemctl enable tomcat 
+      systemctl start tomcat
+      echo "First server is running!" > /usr/share/tomcat/webapps/loadbalancer/index.html
+    SHELL
+  end
+  
+  config.vm.define "srv3" do |srv3|
+    srv3.vm.hostname = "srv3"
+    srv3.vm.network "private_network", ip: "192.168.56.12"
+    srv3.vm.network "forwarded_port", guest: 8080, host: 8002
+    srv3.vm.provision "shell", inline: <<-SHELL
+      yum install -y tomcat tomcat-webapps tomcat-admin-webapps
+      systemctl enable tomcat 
+      systemctl start tomcat
+      sudo mkdir /usr/share/tomcat/webapps/loadbalancer
+      echo "Second server is running!" > /usr/share/tomcat/webapps/loadbalancer/index.html
+    SHELL
+  end
+    
 end

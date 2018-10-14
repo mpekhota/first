@@ -58,7 +58,7 @@ Vagrant.configure("2") do |config|
     vb.gui = true
   #
   #   # Customize the amount of memory on the VM:
-    vb.memory = "512"
+    vb.memory = "1024"
     cpus = "4"
   end
   #
@@ -74,20 +74,21 @@ Vagrant.configure("2") do |config|
     echo "127.0.0.1 localhost" > /etc/hosts
     echo "127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4" >> /etc/hosts
     echo "::1  localhost localhost.localdomain localhost6 localhost6.localdomain6" >> /etc/hosts
-    echo "192.168.56.10 srv1" >> /etc/hosts
-    echo "192.168.56.11 srv2" >> /etc/hosts
-    echo "192.168.56.12 srv3" >> /etc/hosts
-    cp /vagrant/id_rsa /home/vagrant/.ssh/id_rsa
-    chmod 655 /home/vagrant/.ssh/id_rsa
+    echo "192.168.56.10 apache" >> /etc/hosts
+    echo "192.168.56.11 tomcat1" >> /etc/hosts
+    echo "192.168.56.12 tomcat2" >> /etc/hosts
+    yes | ssh-keygen -b 2048 -t rsa -f /home/vagrant/.ssh/id_rsa_key -q -N ""
+    chmod 655 /home/vagrant/.ssh/id_rsa_key
     echo StrictHostKeyChecking no >> /home/vagrant/.ssh/config
-    cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
+    cat /vagrant/id_rsa_key.pub >> /home/vagrant/.ssh/authorized_keys
     echo PubkeyAuthentication yes >> /etc/ssh/sshd_config
   SHELL
     
-  config.vm.define "srv1" do |srv1|
-    srv1.vm.hostname = "srv1"
-    srv1.vm.network "private_network", ip: "192.168.56.10"
-    srv1.vm.provision "shell", inline: <<-SHELL
+  config.vm.define "apache" do |apache|
+    apache.vm.hostname = "apache"
+    apache.vm.network "private_network", ip: "192.168.56.10"
+    apache.vm.network :forwarded_port, guest: 8080, host: 8000
+    apache.vm.provision "shell", inline: <<-SHELL
       yum install -y httpd
       systemctl enable httpd
       systemctl start httpd
@@ -95,13 +96,13 @@ Vagrant.configure("2") do |config|
       touch /etc/httpd/conf.d/workers.properties
       echo "worker.list=lb" > /etc/httpd/conf.d/workers.properties
       echo "worker.lb.type=lb" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.lb.balance_workers=srv2, srv3" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.srv2.host=192.168.56.11" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.srv2.port=8009" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.srv2.type=ajp13" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.srv3.host=192.168.56.12" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.srv3.port=8009" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.srv3.type=ajp13" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.lb.balance_workers=tomcat1, tomcat2" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.tomcat1.host=192.168.56.11" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.tomcat1.port=8009" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.tomcat1.type=ajp13" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.tomcat2.host=192.168.56.12" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.tomcat2.port=8009" >> /etc/httpd/conf.d/workers.properties
+      echo "worker.tomcat2.type=ajp13" >> /etc/httpd/conf.d/workers.properties
       echo "LoadModule jk_module modules/mod_jk.so" > /etc/httpd/conf.d/httpd.conf
       echo "JkWorkersFile conf.d/workers.properties" >> /etc/httpd/conf.d/httpd.conf
       echo "JkShmFile /tmp/shm" >> /etc/httpd/conf.d/httpd.conf
@@ -112,29 +113,29 @@ Vagrant.configure("2") do |config|
     SHELL
   end
   
-  config.vm.define "srv2" do |srv2|
-    srv2.vm.hostname = "srv2"
-    srv2.vm.network "private_network", ip: "192.168.56.11"
-    srv2.vm.network "forwarded_port", guest: 8080, host: 8001
-    srv2.vm.provision "shell", inline: <<-SHELL
+  config.vm.define "tomcat1" do |tomcat1|
+    tomcat1.vm.hostname = "tomcat1"
+    tomcat1.vm.network "private_network", ip: "192.168.56.11"
+    tomcat1.vm.network "forwarded_port", guest: 8080, host: 8001
+    tomcat1.vm.provision "shell", inline: <<-SHELL
       yum install -y tomcat tomcat-webapps tomcat-admin-webapps
       sudo mkdir /usr/share/tomcat/webapps/loadbalancer
       systemctl enable tomcat 
       systemctl start tomcat
-      echo "First server is running!" > /usr/share/tomcat/webapps/loadbalancer/index.html
+      echo "First tomcat server is running!" > /usr/share/tomcat/webapps/loadbalancer/index.html
     SHELL
   end
   
-  config.vm.define "srv3" do |srv3|
-    srv3.vm.hostname = "srv3"
-    srv3.vm.network "private_network", ip: "192.168.56.12"
-    srv3.vm.network "forwarded_port", guest: 8080, host: 8002
-    srv3.vm.provision "shell", inline: <<-SHELL
+  config.vm.define "tomcat2" do |tomcat2|
+    tomcat2.vm.hostname = "tomcat2"
+    tomcat2.vm.network "private_network", ip: "192.168.56.12"
+    tomcat2.vm.network "forwarded_port", guest: 8080, host: 8002
+    tomcat2.vm.provision "shell", inline: <<-SHELL
       yum install -y tomcat tomcat-webapps tomcat-admin-webapps
       systemctl enable tomcat 
       systemctl start tomcat
       sudo mkdir /usr/share/tomcat/webapps/loadbalancer
-      echo "Second server is running!" > /usr/share/tomcat/webapps/loadbalancer/index.html
+      echo "Second tomcat server is running!" > /usr/share/tomcat/webapps/loadbalancer/index.html
     SHELL
   end
     

@@ -108,8 +108,7 @@ Vagrant.configure("2") do |config|
       echo "JkLogFile logs/mod_jk.log" >> /etc/httpd/conf.d/httpd.conf
       echo "JkLogLevel info" >> /etc/httpd/conf.d/httpd.conf
       echo "JkMount /loadbalancer* lb" >> /etc/httpd/conf.d/httpd.conf
-      systemctl enable httpd
-      systemctl start httpd
+      systemctl restart httpd
     SHELL
   end
   

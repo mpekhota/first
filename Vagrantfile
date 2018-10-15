@@ -77,10 +77,9 @@ Vagrant.configure("2") do |config|
     echo "192.168.56.10 apache" >> /etc/hosts
     echo "192.168.56.11 tomcat1" >> /etc/hosts
     echo "192.168.56.12 tomcat2" >> /etc/hosts
-    yes | ssh-keygen -b 2048 -t rsa -f /home/vagrant/.ssh/id_rsa_key -q -N ""
-    chmod 655 /home/vagrant/.ssh/id_rsa_key
+    chmod 655 /home/vagrant/.ssh/id_rsa
     echo StrictHostKeyChecking no >> /home/vagrant/.ssh/config
-    cat /vagrant/id_rsa_key.pub >> /home/vagrant/.ssh/authorized_keys
+    cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
     echo PubkeyAuthentication yes >> /etc/ssh/sshd_config
   SHELL
     
@@ -92,6 +91,8 @@ Vagrant.configure("2") do |config|
       yum install -y httpd
       systemctl enable httpd
       systemctl start httpd
+      yes | ssh-keygen -b 2048 -t rsa -f /home/vagrant/.ssh/id_rsa -q -N ""
+      cp /home/vagrant/.ssh/id_rsa* /vagrant/
       cp /vagrant/mod_jk.so /etc/httpd/modules/
       touch /etc/httpd/conf.d/workers.properties
       echo "worker.list=lb" > /etc/httpd/conf.d/workers.properties
@@ -118,6 +119,7 @@ Vagrant.configure("2") do |config|
     tomcat1.vm.network "private_network", ip: "192.168.56.11"
     tomcat1.vm.network "forwarded_port", guest: 8080, host: 8001
     tomcat1.vm.provision "shell", inline: <<-SHELL
+      cp /vagrant/id_rsa /home/vagrant/.ssh/id_rsa
       yum install -y tomcat tomcat-webapps tomcat-admin-webapps
       sudo mkdir /usr/share/tomcat/webapps/loadbalancer
       systemctl enable tomcat 
@@ -131,6 +133,7 @@ Vagrant.configure("2") do |config|
     tomcat2.vm.network "private_network", ip: "192.168.56.12"
     tomcat2.vm.network "forwarded_port", guest: 8080, host: 8002
     tomcat2.vm.provision "shell", inline: <<-SHELL
+      cp /vagrant/id_rsa /home/vagrant/.ssh/id_rsa
       yum install -y tomcat tomcat-webapps tomcat-admin-webapps
       systemctl enable tomcat 
       systemctl start tomcat

@@ -68,78 +68,69 @@ Vagrant.configure("2") do |config|
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
-  
-  config.vm.provision "shell", inline: <<-SHELL
-    yum install -y mc
-    echo "127.0.0.1 localhost" > /etc/hosts
-    echo "127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4" >> /etc/hosts
-    echo "::1  localhost localhost.localdomain localhost6 localhost6.localdomain6" >> /etc/hosts
-    echo "192.168.56.10 apache" >> /etc/hosts
-    echo "192.168.56.11 tomcat1" >> /etc/hosts
-    echo "192.168.56.12 tomcat2" >> /etc/hosts
-    chmod 655 /home/vagrant/.ssh/id_rsa
-    echo StrictHostKeyChecking no >> /home/vagrant/.ssh/config
-    cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
-    echo PubkeyAuthentication yes >> /etc/ssh/sshd_config
-  SHELL
-    
+
+TOMCAT_COUNT = 3
+
   config.vm.define "apache" do |apache|
     apache.vm.hostname = "apache"
     apache.vm.network "private_network", ip: "192.168.56.10"
-    apache.vm.network :forwarded_port, guest: 8080, host: 8000
+    apache.vm.network "forwarded_port", guest: 80, host: 8010
     apache.vm.provision "shell", inline: <<-SHELL
-      yum install -y httpd
-      systemctl enable httpd
-      systemctl start httpd
       yes | ssh-keygen -b 2048 -t rsa -f /home/vagrant/.ssh/id_rsa -q -N ""
       cp /home/vagrant/.ssh/id_rsa* /vagrant/
+      chmod 655 /home/vagrant/.ssh/id_rsa
+      echo StrictHostKeyChecking no >> /home/vagrant/.ssh/config
+      cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
+      echo PubkeyAuthentication yes >> /etc/ssh/sshd_config
+      yum -y install mc httpd
+      systemctl enable httpd
       cp /vagrant/mod_jk.so /etc/httpd/modules/
       touch /etc/httpd/conf.d/workers.properties
-      echo "worker.list=lb" > /etc/httpd/conf.d/workers.properties
+      echo "worker.list=lb" >> /etc/httpd/conf.d/workers.properties
       echo "worker.lb.type=lb" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.lb.balance_workers=tomcat1, tomcat2" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.tomcat1.host=192.168.56.11" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.tomcat1.port=8009" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.tomcat1.type=ajp13" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.tomcat2.host=192.168.56.12" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.tomcat2.port=8009" >> /etc/httpd/conf.d/workers.properties
-      echo "worker.tomcat2.type=ajp13" >> /etc/httpd/conf.d/workers.properties
-      echo "LoadModule jk_module modules/mod_jk.so" > /etc/httpd/conf.d/httpd.conf
+      TOMCAT_COUNT=#{TOMCAT_COUNT}
+      NODE=
+      for ((i=1;i<=$TOMCAT_COUNT-1;i++))
+        do
+          NODE="${NODE}tomcat${i}, "
+        done
+      NODE=${NODE}tomcat${TOMCAT_COUNT}
+      echo "worker.lb.balance_workers=${NODE}" >> /etc/httpd/conf.d/workers.properties
+      for i in $(seq 1 $TOMCAT_COUNT)
+        do
+          echo "worker.tomcat${i}.host=tomcat${i}" >> /etc/httpd/conf.d/workers.properties
+          echo "worker.tomcat${i}.port=8009" >> /etc/httpd/conf.d/workers.properties
+          echo "worker.tomcat${i}.type=ajp13" >> /etc/httpd/conf.d/workers.properties
+          echo "192.168.56.$((10+i))    tomcat${i}" >> /etc/hosts
+        done
+      echo "LoadModule jk_module modules/mod_jk.so" >> /etc/httpd/conf.d/httpd.conf
       echo "JkWorkersFile conf.d/workers.properties" >> /etc/httpd/conf.d/httpd.conf
       echo "JkShmFile /tmp/shm" >> /etc/httpd/conf.d/httpd.conf
       echo "JkLogFile logs/mod_jk.log" >> /etc/httpd/conf.d/httpd.conf
       echo "JkLogLevel info" >> /etc/httpd/conf.d/httpd.conf
       echo "JkMount /loadbalancer* lb" >> /etc/httpd/conf.d/httpd.conf
-      systemctl restart httpd
+      systemctl start httpd 
     SHELL
   end
   
-  config.vm.define "tomcat1" do |tomcat1|
-    tomcat1.vm.hostname = "tomcat1"
-    tomcat1.vm.network "private_network", ip: "192.168.56.11"
-    tomcat1.vm.network "forwarded_port", guest: 8080, host: 8001
-    tomcat1.vm.provision "shell", inline: <<-SHELL
-      cp /vagrant/id_rsa /home/vagrant/.ssh/id_rsa
-      yum install -y tomcat tomcat-webapps tomcat-admin-webapps
-      sudo mkdir /usr/share/tomcat/webapps/loadbalancer
-      systemctl enable tomcat 
-      systemctl start tomcat
-      echo "First tomcat server is running!" > /usr/share/tomcat/webapps/loadbalancer/index.html
-    SHELL
+  (1..TOMCAT_COUNT).each do |i|
+    config.vm.define "tomcat#{i}" do |tomcat|
+      tomcat.vm.hostname = "tomcat#{i}"
+      tomcat.vm.network "private_network", ip: "192.168.56.#{10 + i}"
+      tomcat.vm.network "forwarded_port", guest: 8080, host: "#{8010 + i}"
+      tomcat.vm.provision "shell", inline: <<-SHELL
+        cp /vagrant/id_rsa /home/vagrant/.ssh/id_rsa
+        chmod 655 /home/vagrant/.ssh/id_rsa
+        echo StrictHostKeyChecking no >> /home/vagrant/.ssh/config
+        cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
+        echo PubkeyAuthentication yes >> /etc/ssh/sshd_config
+        yum -y install mc tomcat tomcat-webapps tomcat-admin-webapps
+        systemctl enable tomcat
+        systemctl start tomcat
+        mkdir /usr/share/tomcat/webapps/loadbalancer/
+        echo "Tomcat server#{i} is running!" >> /usr/share/tomcat/webapps/loadbalancer/index.html
+        echo "192.168.56.10    apache" >> /etc/hosts
+      SHELL
+    end
   end
-  
-  config.vm.define "tomcat2" do |tomcat2|
-    tomcat2.vm.hostname = "tomcat2"
-    tomcat2.vm.network "private_network", ip: "192.168.56.12"
-    tomcat2.vm.network "forwarded_port", guest: 8080, host: 8002
-    tomcat2.vm.provision "shell", inline: <<-SHELL
-      cp /vagrant/id_rsa /home/vagrant/.ssh/id_rsa
-      yum install -y tomcat tomcat-webapps tomcat-admin-webapps
-      systemctl enable tomcat 
-      systemctl start tomcat
-      sudo mkdir /usr/share/tomcat/webapps/loadbalancer
-      echo "Second tomcat server is running!" > /usr/share/tomcat/webapps/loadbalancer/index.html
-    SHELL
-  end
-    
-end
+end  

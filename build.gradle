@@ -12,40 +12,42 @@ compile group: 'log4j', name: 'log4j', version: '1.2.17'
 compile group: 'commons-io', name: 'commons-io', version: '2.4'
 }
 
-task getCurrentVersion << {
+task GetCurrentVersion << {
     println version
 }
 
-task changeCurrentVersion << {
+task ChangeCurrentVersion << {
     def propsFile = file('gradle.properties')
     def versionProps = new Properties()
     versionProps.load(propsFile.newDataInputStream())
     def versionMajor = versionProps['major'].toInteger()
     def versionMinor = versionProps['minor'].toInteger()
     def versionBuild = versionProps['build'].toInteger() +1
-    def version = "${versionMajor}.${versionMinor}.${versionBuild}"
+    def rev = "${versionMajor}.${versionMinor}.${versionBuild}"
     versionProps['major'] = versionMajor.toString()
     versionProps['minor'] = versionMinor.toString()
     versionProps['build'] = versionBuild.toString()
-    versionProps['version'] = version.toString()
+    versionProps['rev'] = rev.toString()
     versionProps.store(propsFile.newWriter(), null)
-    println version
+    println rev
 }
 
-task WriteGreeting << {
-    def propsFile = file('gradle.properties')
+task WriteGreeting (dependsOn:check){
+    doLast {
     def propsFile1 = file('/build/resources/main/greeting.txt')
+    if (propsFile1.exists()) propsFile1.delete()
+    def propsFile = file('gradle.properties')
     def versionProps = new Properties()
     versionProps.load(propsFile.newDataInputStream())
     def versionMajor = versionProps['major'].toInteger()
     def versionMinor = versionProps['minor'].toInteger()
-    def versionBuild = versionProps['build'].toInteger() +1
-    def version = "${versionMajor}.${versionMinor}.${versionBuild}"
-    versionProps['major'] = versionMajor.toString()
-    versionProps['minor'] = versionMinor.toString()
-    versionProps['build'] = versionBuild.toString()
-    versionProps['version'] = version.toString()
-    versionProps.store(propsFile.newWriter(), null)
-    versionProps.store(propsFile1.newWriter(), null)
-    println version
+    def versionBuild = versionProps['build'].toInteger()
+    def rev = "${versionMajor}.${versionMinor}.${versionBuild}"
+    propsFile1 << rev
+    println rev
+    }
+}
+
+build{
+    dependsOn WriteGreeting
 }

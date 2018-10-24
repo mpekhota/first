@@ -59,11 +59,10 @@ task sorting << {
         '1.1.15'
     ]
     // insert code here to sort array
-    def vers = unsortedArray
     .sort({a, b ->
         GradleVersion.version(a).compareTo(GradleVersion.version(b))
         })
-    def sortedArray = vers
+    def sortedArray = unsortedArray
     println sortedArray // it should print to console correctly sorted array
     // example of correct output [1.1.0, 1.1.3, 1.1.8, 1.1.15, 1.9.1, 1.10.2]
 }

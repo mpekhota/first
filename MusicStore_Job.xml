@@ -1,0 +1,47 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@3.9.1">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>https://github.com/mpekhota/first</url>
+        <credentialsId>309ca723-599f-4e0b-9a71-f448736bad1e</credentialsId>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>*/task5</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions/>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.BatchFile>
+      <command>dotnet restore&#xd;
+dotnet build --runtime win81-x64 --configuration &quot;Release&quot;&#xd;
+C:\Nuget\Nuget.exe pack &quot;%WORKSPACE%\samples\MusicStore.nuspec&quot; -IncludeReferencedProjects -properties Configuration=Release -version 1.0.%BUILD_NUMBER%&#xd;
+C:\Nuget\Nuget.exe push *.1.0.%BUILD_NUMBER%.nupkg -ApiKey %OctopusServerKey% -Source &quot;http://localhost/nuget/packages&quot;&#xd;
+C:\Octopus\Octo.exe create-release --project MusicStore --version 1.0.%BUILD_NUMBER% --packageversion 1.0.%BUILD_NUMBER% --server http://localhost --apiKey %OctopusServerKey%</command>
+    </hudson.tasks.BatchFile>
+  </builders>
+  <publishers/>
+  <buildWrappers>
+    <com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper>
+      <varPasswordPairs>
+        <varPasswordPair var="OctopusServerKey" password="{AQAAABAAAAAgz60kW+GAdzi6g4iQf4/asMHXYN5bs3Mk+ziq7qpSWz+N1AFy8j8wCLSJew4Cprym}"/>
+      </varPasswordPairs>
+    </com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper>
+  </buildWrappers>
+</project>

@@ -54,7 +54,7 @@ node ('master') {
             sh ("git commit -am \"BUILD - ${version}\"")
             sh ("git push https://${GITLogin}:${GITPass}@github.com/mpekhota/first.git")
             sh ("git checkout master")
-            sh ("git merge task6")
+            sh ("git merge task6 --strategy-option theirs")
             sh ("git push --tags https://${GITLogin}:${GITPass}@github.com/mpekhota/first.git master")
         } 
     }

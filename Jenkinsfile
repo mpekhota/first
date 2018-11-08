@@ -27,11 +27,11 @@ node () {
                 sh 'sudo chmod 775 /var/lib/tomcat/webapps'
                 sh "curl ${nexusRepo}/snapshots/test/${version}/first.war  -o /var/lib/tomcat/webapps/first.war"
                 sh 'sudo chmod 777 /var/lib/tomcat/webapps/first.war'
-                sh 'curl -X POST "http://192.168.56.10/jkmanager?cmd=update&from=list&w=lb&sw=${nodeName[i]}&vwa=1"'
+                sh 'curl -X POST "http://apache/jkmanager?cmd=update&from=list&w=lb&sw=${nodeName[i]}&vwa=1"'
                 sleep(3)
                 def ReleaseVersion = sh (returnStdout: true, script: 'curl http://localhost:8080/first/')
                 ReleaseVersion = ReleaseVersion.replaceAll(/<!--.*?-->/, '').replaceAll(/<.*?>/, '')
-                sh 'curl -X POST "http://192.168.56.10/jkmanager?cmd=update&from=list&w=lb&sw=${nodeName[i]}&vwa=0"'
+                sh 'curl -X POST "http://apache/jkmanager?cmd=update&from=list&w=lb&sw=${nodeName[i]}&vwa=0"'
                 ReleaseVersion = ReleaseVersion.trim()
                 if (ReleaseVersion.equals(version)) {
                     println "UPDATE SUCCESS! NEW VERSION ${version}"

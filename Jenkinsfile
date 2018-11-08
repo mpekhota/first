@@ -1,4 +1,5 @@
 def nodeName = ['tomcat1', 'tomcat2']
+def nexusRepo = "http://192.168.56.10:8081/nexus/content/repositories"
 def version
 node ('master') {
     stage ('PREPARING'){
@@ -11,9 +12,9 @@ node ('master') {
         sh './gradlew build'
     }
     stage ('UPLOAD ARTIFACTORY') {
-        version = readFile("/var/lib/jenkins/workspace/new/build/resources/main/greeting.txt")
+        version = readFile("${env.WORKSPACE}/build/resources/main/greeting.txt")
         withCredentials([usernamePassword(credentialsId: 'NexusCreds', passwordVariable: 'NexusPass', usernameVariable: 'NexusLogin')]) {
-            sh "curl -X PUT -u ${NexusLogin}:${NexusPass} -T /var/lib/jenkins/workspace/new/build/libs/first.war \"http://localhost:8081/nexus/content/repositories/snapshots/test/${version}/first.war\""
+            sh "curl -X PUT -u ${NexusLogin}:${NexusPass} -T ${env.WORKSPACE}/build/libs/first.war \"${nexusRepo}/snapshots/test/${version}/first.war\""
         }
         println "NEXUS ARTIFACTORY VERSION ${version}" 
     }
@@ -23,8 +24,8 @@ node () {
         int i = 0
         for (tomcat in nodeName){
             stage("DEPLOY TO ${nodeName[i]}"){
-                sh 'sudo chmod 777 /var/lib/tomcat/webapps'
-                sh "curl http://192.168.56.10:8081/nexus/content/repositories/snapshots/test/${version}/first.war  -o /var/lib/tomcat/webapps/first.war"
+                sh 'sudo chmod 775 /var/lib/tomcat/webapps'
+                sh "curl ${nexusRepo}/snapshots/test/${version}/first.war  -o /var/lib/tomcat/webapps/first.war"
                 sh 'sudo chmod 777 /var/lib/tomcat/webapps/first.war'
                 sh 'curl -X POST "http://192.168.56.10/jkmanager?cmd=update&from=list&w=lb&sw=${nodeName[i]}&vwa=1"'
                 sleep(3)
@@ -36,7 +37,7 @@ node () {
                     println "UPDATE SUCCESS! NEW VERSION ${version}"
                 }
                 else {
-                    println "ERROR DEPLOY TO ${NODE_NAME}. TRY AGAIN."
+                    error "ERROR DEPLOY TO ${NODE_NAME}. TRY AGAIN."
                 }
                 i++
             }

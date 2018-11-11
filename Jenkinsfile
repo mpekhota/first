@@ -22,7 +22,7 @@ node ('master') {
     stage('BUIL DOCKER TO REGISTRY') {
         mkdir /home/vagrant/containers && cd /home/vagrant/containers
         wget https://github.com/mpekhota/first/blob/task7/Dockersfile
-        docker build -t localhost:5000/task7/tomcatcontainer:${version} /home/vagrant/containers
+        docker build -t localhost:5000/tomcatcontainer:${version} /home/vagrant/containers
     }
 }
 node ('master') {

@@ -1,10 +1,9 @@
-def nodeName = ['tomcat1', 'tomcat2']
 def nexusRepo = "http://192.168.56.10:8081/nexus/content/repositories"
 def version
 node ('master') {
     stage ('PREPARING'){
         cleanWs ()
-        git branch: 'task6', credentialsId: 'GITCreds', url: 'https://github.com/mpekhota/first.git'
+        git branch: 'task7', credentialsId: 'GITCreds', url: 'https://github.com/mpekhota/first.git'
     }
     stage ('BUILD') {
         sh 'chmod 777 ./gradlew'
@@ -19,29 +18,11 @@ node ('master') {
         println "NEXUS ARTIFACTORY VERSION ${version}" 
     }
 }
-node () {
-    if(nodeName.size()>0){
-        int i = 0
-        for (tomcat in nodeName){
-            stage("DEPLOY TO ${nodeName[i]}"){
-                sh 'sudo chmod 775 /var/lib/tomcat/webapps'
-                sh "curl ${nexusRepo}/snapshots/test/${version}/first.war  -o /var/lib/tomcat/webapps/first.war"
-                sh 'sudo chmod 777 /var/lib/tomcat/webapps/first.war'
-                sh 'curl -X POST "http://apache/jkmanager?cmd=update&from=list&w=lb&sw=${nodeName[i]}&vwa=1"'
-                sleep(3)
-                def ReleaseVersion = sh (returnStdout: true, script: 'curl http://localhost:8080/first/')
-                ReleaseVersion = ReleaseVersion.replaceAll(/<!--.*?-->/, '').replaceAll(/<.*?>/, '')
-                sh 'curl -X POST "http://apache/jkmanager?cmd=update&from=list&w=lb&sw=${nodeName[i]}&vwa=0"'
-                ReleaseVersion = ReleaseVersion.trim()
-                if (ReleaseVersion.equals(version)) {
-                    println "UPDATE SUCCESS! NEW VERSION ${version}"
-                }
-                else {
-                    error "ERROR DEPLOY TO ${NODE_NAME}. TRY AGAIN."
-                }
-                i++
-            }
-        }
+node ('master') {
+    stage('BUIL DOCKER TO REGISTRY') {
+        mkdir /home/vagrant/containers && cd /home/vagrant/containers
+        wget https://github.com/mpekhota/first/blob/task7/Dockersfile
+        docker build -t localhost:5000/task7/tomcatcontainer:${version} /home/vagrant/containers
     }
 }
 node ('master') {
@@ -53,8 +34,6 @@ node ('master') {
             sh ("git tag ${version}")
             sh ("git commit -am \"BUILD - ${version}\"")
             sh ("git push https://${GITLogin}:${GITPass}@github.com/mpekhota/first.git")
-            sh ("git checkout master")
-            sh ("git merge task6 --strategy-option theirs")
             sh ("git push --tags https://${GITLogin}:${GITPass}@github.com/mpekhota/first.git master")
         } 
     }

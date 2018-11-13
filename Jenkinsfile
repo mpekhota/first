@@ -13,7 +13,7 @@ node ('master') {
     }
     stage ('UPLOAD ARTIFACTORY') {
         version = readFile("${env.WORKSPACE}/build/resources/main/greeting.txt")
-        withCredentials([usernamePassword(credentialsId: 'NexusCreds', passwordVariable: 'NexusPass', usernameVariable: 'NexusLogin')]) {
+        withCredentials([usernamePassword(credentialsId: "NexusCreds", passwordVariable: "NexusPass", usernameVariable: "NexusLogin")]) {
             sh "curl -X PUT -u ${NexusLogin}:${NexusPass} -T ${env.WORKSPACE}/build/libs/first.war \"${nexusRepo}/snapshots/test/${version}/first.war\""
         }
         println "NEXUS ARTIFACTORY VERSION ${version}" 
@@ -40,7 +40,7 @@ node ('master') {
         }
     }
     stage('PUSH TO GIT') {
-        withCredentials([usernamePassword(credentialsId: 'GITCreds', passwordVariable: 'GITPass', usernameVariable: 'GITLogin')]) {
+        withCredentials([usernamePassword(credentialsId: "GITCreds", passwordVariable: "GITPass", usernameVariable: "GITLogin")]) {
             sh ("git config --global user.name mpekhota")
             sh ("git config --global user.email m.pekhota@gmail.com")
             sh ("git add gradle.properties")

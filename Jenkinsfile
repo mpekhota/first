@@ -1,6 +1,7 @@
 def version
 def branch = "task7"
 def nexusRepo = "http://192.168.56.10:8081/nexus/content/repositories"
+def dockerRegistry = "192.168.56.10:5000"
 node ('master') {
     stage ('PREPARING'){
         cleanWs ()
@@ -20,22 +21,22 @@ node ('master') {
     }
     stage('BUILD DOCKER TO REGISTRY') {
         sh "docker build -t first:${version} --build-arg version=${version} ."
-        sh "docker tag first:${version} 192.168.56.10:5000/first:${version}"
-        sh "docker push 192.168.56.10:5000/first:${version}"
+        sh "docker tag first:${version} ${dockerRegistry}/first:${version}"
+        sh "docker push ${dockerRegistry}/first:${version}"
     }
     stage('RUN DOCKER SWARM'){
         def status = sh(returnStdout: true, script: 'docker service ls | grep -c "tomcatweb" || true')
         println status.dump()
         if (status.trim().equals("1")) {
-            sh "docker service update --image 192.168.56.10:5000/first:${version} tomcatweb"
+            sh "docker service update --image ${dockerRegistry}/first:${version} tomcatweb"
         }
         else {
-            sh "docker service create --name tomcatweb --replicas 2  --update-delay 30s --publish 8089:8080 192.168.56.10:5000/first:${version}"
+            sh "docker service create --name tomcatweb --replicas 2  --update-delay 30s --publish 8089:8080 ${dockerRegistry}/first:${version}"
         }
-        def ReleaseVersion = sh (returnStdout: true, script: 'curl http://192.168.56.10:8089/first/')
-        ReleaseVersion = ReleaseVersion.replaceAll(/<!--.*?-->/, '').replaceAll(/<.*?>/, '')
-        ReleaseVersion = ReleaseVersion.trim()
-        if (ReleaseVersion.equals(version)) {
+        def releaseVersion = sh (returnStdout: true, script: 'curl http://192.168.56.10:8089/first/')
+        releaseVersion = releaseVersion.replaceAll(/<!--.*?-->/, '').replaceAll(/<.*?>/, '')
+        releaseVersion = releaseVersion.trim()
+        if (releaseVersion.equals(version)) {
             println "UPDATE SUCCESS! NEW VERSION ${version}"
         }
     }

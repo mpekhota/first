@@ -4,6 +4,6 @@ DEPENDENCIES
     metadata: true
 
 GRAPH
-  bluegreen (1.1.14)
+  bluegreen (1.1.15)
     docker (>= 0.0.0)
   docker (4.6.7)

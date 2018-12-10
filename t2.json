@@ -27,7 +27,7 @@
 
             "files" : {
               "/var/www/html/index.html" : {
-                Hello world! AWS ec2 instance is running!
+                "Hello world! AWS ec2 instance is running!"
               },
                 "mode"  : "000600",
                 "owner" : "apache",

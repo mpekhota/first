@@ -4,6 +4,14 @@
 #
 # Copyright:: 2018, Mikhail Pekhota, All Rights Reserved.
 
+template '/etc/docker/daemon.json' do
+    source 'daemon.json'
+    owner 'root'
+    group 'root'
+    mode '0755'
+    action :create
+end
+
 docker_service 'default' do
     action [:create, :start]
 end

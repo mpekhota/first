@@ -4,7 +4,7 @@ maintainer_email 'm.pekhota@localhost'
 license 'All Rights Reserved'
 description 'Installs/Configures bluegreen'
 long_description 'Installs/Configures bluegreen'
-version '1.1.15'
+version '1.1.16'
 chef_version '>= 13.0'
 depends 'docker'
 

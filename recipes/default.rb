@@ -19,7 +19,7 @@ if isBlueRunning == 0
     docker_container 'nodeBlue' do
         repo "#{node['registry']['url']}"
         tag node['registry']['version']
-        port '8080:8080'
+        port '8082:8080'
     end	
     docker_container 'nodeGreen' do
         action [:kill, :delete]

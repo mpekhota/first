@@ -9,7 +9,7 @@
   "Placement": {
       "AvailabilityZone": "eu-central-1b"
   }
-  "Resources" : {
+  "Resources": {
     "WebServerInstance": {
       "Type": "AWS::EC2::Instance",
       "Metadata" : {
@@ -26,18 +26,9 @@
             },
 
             "files" : {
-              "/var/www/html/index.php" : {
-                "content" : { "Fn::Join" : [ "", [
-                  "<html>\n",
-                  "  <head>\n",
-                  "    <title>AWS CloudFormation PHP Sample</title>\n",
-                  "    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\">\n",
-                  "  </head>\n",
-                  "  <body>\n",
-                  "    <h1>Welcome to the AWS CloudFormation PHP Sample</h1>\n",
-                  "  </body>\n",
-                  "</html>\n"
-                ]]},
+              "/var/www/html/index.html" : {
+                Hello world! AWS ec2 instance is running!
+              },
                 "mode"  : "000600",
                 "owner" : "apache",
                 "group" : "apache"

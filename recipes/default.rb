@@ -13,7 +13,7 @@ docker_image "#{node['registry']['url']}" do
     action :pull
 end
 
-isBlueRunning = `docker ps | grep '8080->' -c`
+isBlueRunning = `docker ps | grep '8082->' -c`
 
 if isBlueRunning == 0
     docker_container 'nodeBlue' do

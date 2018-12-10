@@ -1,2 +1,2 @@
-default['registry']['url'] = '192.168.56.10:5000'
-default['registry']['version']='1.0.15'
+default['registry']['url'] = '192.168.56.10:5000/webserver'
+default['registry']['version']='1.0.16'

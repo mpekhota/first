@@ -1,0 +1,53 @@
+{
+  "InstanceType": "t2.micro",
+  "ImageId": "ami-0cfbf4f6db41068ac",
+  "KeyName": "free.aws.t2.micro",
+  "SecurityGroups": [
+      "launch-wizard-1"
+  ],
+  
+  "Placement": {
+      "AvailabilityZone": "eu-central-1b"
+  }
+  "Resources" : {
+    "WebServerInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Metadata" : {
+      "AWS::CloudFormation::Init" : {
+          "configSets" : {
+            "Install" : [ "Install" ]
+          },
+
+          "Install" : {
+            "packages" : {
+              "yum" : {
+                "httpd"        : []
+              }
+            },
+
+            "files" : {
+              "/var/www/html/index.php" : {
+                "content" : { "Fn::Join" : [ "", [
+                  "<html>\n",
+                  "  <head>\n",
+                  "    <title>AWS CloudFormation PHP Sample</title>\n",
+                  "    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\">\n",
+                  "  </head>\n",
+                  "  <body>\n",
+                  "    <h1>Welcome to the AWS CloudFormation PHP Sample</h1>\n",
+                  "  </body>\n",
+                  "</html>\n"
+                ]]},
+                "mode"  : "000600",
+                "owner" : "apache",
+                "group" : "apache"
+              }
+            },
+            "services" : {
+              "sysvinit" : {  
+                "httpd"   : { "enabled" : "true", "ensureRunning" : "true" }
+              }
+            }
+          }
+      },
+}

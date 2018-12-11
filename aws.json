@@ -1,0 +1,6 @@
+{
+  "ImageId": "ami-0cfbf4f6db41068ac", 
+  "InstanceType": "t2.micro", 
+  "KeyName": "free.aws.t2.micro",
+  "SecurityGroupIds": ["sg-0d73fd8c9c37170b4"]
+}
